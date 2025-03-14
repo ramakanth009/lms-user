@@ -1,0 +1,222 @@
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Avatar,
+  Box,
+  InputBase,
+  Paper,
+  Menu,
+  MenuItem,
+  Divider,
+} from '@mui/material';
+import { makeStyles } from '@mui/styles';
+import {
+  Search as SearchIcon,
+  Person as PersonIcon,
+  Logout as LogoutIcon,
+  Settings as SettingsIcon,
+  KeyboardArrowDown,
+} from '@mui/icons-material';
+import { AuthContext } from '../../contexts/AuthContext';
+import Notifications from '../../contexts/NotificationContext';
+
+const useStyles = makeStyles({
+  appBar: {
+    backgroundColor: '#7E57C2 !important', // Purple theme
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15) !important',
+    zIndex: '1201 !important',
+  },
+  toolbar: {
+    display: 'flex !important',
+    justifyContent: 'space-between !important',
+    padding: '0 20px !important',
+    minHeight: '64px !important',
+  },
+  logo: {
+    color: '#ffffff !important',
+    fontWeight: '600 !important',
+    fontSize: '1.5rem !important',
+    letterSpacing: '0.5px !important',
+  },
+  search: {
+    position: 'relative !important',
+    borderRadius: '8px !important',
+    backgroundColor: 'rgba(255, 255, 255, 0.15) !important',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.25) !important',
+    },
+    marginRight: '16px !important',
+    width: '300px !important',
+    transition: 'all 0.3s ease !important',
+    '@media (max-width: 768px)': {
+      width: '200px !important',
+    },
+  },
+  searchIcon: {
+    padding: '0 16px !important',
+    height: '100% !important',
+    position: 'absolute !important',
+    display: 'flex !important',
+    alignItems: 'center !important',
+    justifyContent: 'center !important',
+    color: '#ffffff !important',
+  },
+  inputRoot: {
+    color: '#ffffff !important',
+    width: '100% !important',
+  },
+  inputInput: {
+    padding: '10px 10px 10px 48px !important',
+    width: '100% !important',
+    '&::placeholder': {
+      color: 'rgba(255, 255, 255, 0.7) !important',
+      opacity: 1,
+    },
+  },
+  profileSection: {
+    display: 'flex !important',
+    alignItems: 'center !important',
+    cursor: 'pointer !important',
+    padding: '4px 8px !important',
+    borderRadius: '8px !important',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.1) !important',
+    },
+  },
+  avatar: {
+    backgroundColor: '#5E35B1 !important',
+    marginRight: '8px !important',
+  },
+  userName: {
+    color: '#ffffff !important',
+    marginRight: '4px !important',
+    fontWeight: '500 !important',
+  },
+  dropdownIcon: {
+    color: '#ffffff !important',
+  },
+  menuItem: {
+    padding: '10px 16px !important',
+    display: 'flex !important',
+    alignItems: 'center !important',
+    gap: '10px !important',
+    minWidth: '180px !important',
+  },
+});
+
+const Navbar = () => {
+  const classes = useStyles();
+  const navigate = useNavigate();
+  const { setIsAuthenticated } = useContext(AuthContext);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleProfileClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleProfile = () => {
+    navigate('/profile');
+    handleClose();
+  };
+
+  const handleLogout = () => {
+    // Clear all authentication data
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('rememberedEmail');
+    
+    // Update authentication context
+    setIsAuthenticated(false);
+    
+    // Close menu
+    handleClose();
+    
+    // Navigate to login
+    navigate('/login', { replace: true });
+  };
+
+  return (
+    <AppBar position="fixed" className={classes.appBar}>
+      <Toolbar className={classes.toolbar}>
+        <Typography variant="h6" className={classes.logo}>
+          Gigaversity
+        </Typography>
+
+        <Paper component="form" className={classes.search}>
+          <Box className={classes.searchIcon}>
+            <SearchIcon />
+          </Box>
+          <InputBase
+            placeholder="Search courses, assessments..."
+            classes={{
+              root: classes.inputRoot,
+              input: classes.inputInput,
+            }}
+          />
+        </Paper>
+
+        <Box display="flex" alignItems="center">
+          <Notifications />
+          
+          <Box 
+            className={classes.profileSection}
+            onClick={handleProfileClick}
+          >
+            <Avatar className={classes.avatar}>S</Avatar>
+            <Typography className={classes.userName}>Student</Typography>
+            <KeyboardArrowDown className={classes.dropdownIcon} />
+          </Box>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+            PaperProps={{
+              elevation: 3,
+              sx: {
+                mt: 1.5,
+                overflow: 'visible',
+                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.1))',
+                '&::before': {
+                  content: '""',
+                  display: 'block',
+                  position: 'absolute',
+                  top: 0,
+                  right: 14,
+                  width: 10,
+                  height: 10,
+                  bgcolor: 'background.paper',
+                  transform: 'translateY(-50%) rotate(45deg)',
+                  zIndex: 0,
+                },
+              },
+            }}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+            <MenuItem onClick={handleProfile} className={classes.menuItem}>
+              <PersonIcon fontSize="small" />
+              My Profile
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout} className={classes.menuItem} sx={{ color: '#f44336' }}>
+              <LogoutIcon fontSize="small" />
+              Logout
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
+};
+
+export default Navbar;
