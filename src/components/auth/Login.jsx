@@ -367,7 +367,7 @@ const Login = () => {
 
               <form className={classes.form} onSubmit={handleSubmit}>
                 {error && (
-                  <Slide direction="down" in={Boolean(error)}>
+                  <Slide direction="right" in={Boolean(error)}>
                     <Alert severity="error" sx={{ mb: 2 }}>
                       {error}
                     </Alert>
