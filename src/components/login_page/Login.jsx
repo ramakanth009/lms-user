@@ -23,6 +23,9 @@ import {
   Person as PersonIcon,
   Lock as LockIcon,
   Email as EmailIcon,
+  School as SchoolIcon,
+  Groups as GroupsIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
 
 const useStyles = makeStyles({
@@ -57,6 +60,8 @@ const useStyles = makeStyles({
     alignItems: "center",
     padding: "40px",
     color: "white",
+    position: "relative",
+    overflow: "hidden",
     "@media (max-width: 900px)": {
       display: "none",
     },
@@ -81,32 +86,36 @@ const useStyles = makeStyles({
   },
   submitButton: {
     marginTop: "20px",
-    background: "#6c5ce7",
+    background: "#6c5ce7 !important",
     color: "white",
     padding: "12px",
     "&:hover": {
-      background: "#5a4dcc",
+      background: "#5a4dcc !important",
     },
   },
   welcomeText: {
-    fontSize: "32px",
+    fontSize: "36px !important",
     fontWeight: "bold",
     marginBottom: "40px",
     color: "white",
     textAlign: "center",
   },
   featureList: {
-    marginTop: "20px",
+    marginTop: "20px !important",
     listStyle: "none",
     padding: 0,
     "& li": {
-      marginBottom: "15px",
+      marginBottom: "25px",
       display: "flex",
       alignItems: "center",
-      "&:before": {
-        content: '"•"',
-        marginRight: "10px",
-        color: "white",
+      fontSize: "18px",
+      transition: "transform 0.3s ease",
+      "&:hover": {
+        transform: "translateX(10px)",
+      },
+      "& .MuiSvgIcon-root": {
+        marginRight: "15px",
+        fontSize: "24px",
       },
     },
   },
@@ -132,6 +141,34 @@ const useStyles = makeStyles({
       background: "#f5f5f5",
     },
   },
+  adminContact: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    textAlign: "center",
+    padding: "20px",
+    background: "rgba(255, 255, 255, 0.1)",
+    borderRadius: "15px",
+    backdropFilter: "blur(10px)",
+  },
+  shine: {
+    position: "absolute",
+    top: "-50%",
+    left: "-50%",
+    width: "200%",
+    height: "200%",
+    background: "linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent)",
+    animation: "$shine 3s infinite",
+  },
+  "@keyframes shine": {
+    "0%": {
+      transform: "translateX(-100%) translateY(-100%)",
+    },
+    "100%": {
+      transform: "translateX(100%) translateY(100%)",
+    },
+  },
 });
 
 const LoginPage = () => {
@@ -140,6 +177,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -195,7 +233,7 @@ const LoginPage = () => {
       <Container maxWidth="lg">
         <Paper className={classes.paper}>
           <Box className={classes.leftSection}>
-            <Typography className={classes.brandName}>GigaEd</Typography>
+            <Typography className={classes.brandName}>Gigaversity</Typography>
             <Typography variant="h5" gutterBottom>
               Welcome Back!
             </Typography>
@@ -296,7 +334,14 @@ const LoginPage = () => {
               <Box mt={3} textAlign="center">
                 <Typography variant="body2" color="textSecondary">
                   Don't have an account?{" "}
-                  <Link href="#" className={classes.forgotPassword}>
+                  <Link 
+                    href="#" 
+                    className={classes.forgotPassword}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowSignup(true);
+                    }}
+                  >
                     Sign Up
                   </Link>
                 </Typography>
@@ -305,18 +350,47 @@ const LoginPage = () => {
           </Box>
 
           <Box className={classes.rightSection}>
-            <Box className={classes.rightSection}>
-              <Typography className={classes.welcomeText}>
-                Welcome to GigaEd Learning Platform
-              </Typography>
-              <ul className={classes.featureList}>
-                <li>Access to comprehensive learning materials</li>
-                <li>Interactive quizzes and assessments</li>
-                <li>Track your progress in real-time</li>
-                <li>Connect with expert instructors</li>
-                <li>Join a community of learners</li>
-              </ul>
-            </Box>
+            {!showSignup ? (
+              <>
+                <div className={classes.shine} />
+                <Typography className={classes.welcomeText}>
+                  Welcome to Gigaversity Learning Platform
+                </Typography>
+                <ul className={classes.featureList}>
+                  <li>
+                    <SchoolIcon />
+                    Access to comprehensive learning materials with expert-curated content
+                  </li>
+                  <li>
+                    <TimelineIcon />
+                    Interactive quizzes and real-time progress tracking
+                  </li>
+                  <li>
+                    <GroupsIcon />
+                    Join a thriving community of passionate learners
+                  </li>
+                  <li>
+                    <PersonIcon />
+                    One-on-one mentoring with industry experts
+                  </li>
+                </ul>
+              </>
+            ) : (
+              <Box className={classes.adminContact}>
+                <Typography variant="h4" gutterBottom>
+                  Want to Join Gigaversity?
+                </Typography>
+                <Typography variant="body1" sx={{ marginBottom: 3 }}>
+                  Please contact our administrative team to create your account.
+                </Typography>
+                <Typography variant="h6">
+                  Email: admin@gigaversity.com
+                </Typography>
+                <Typography variant="h6">
+                  Phone: +1 (555) 123-4567
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Paper>
       </Container>
