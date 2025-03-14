@@ -8,7 +8,7 @@ import Dashboard from '../dashboard/Dashboard';
 import CareerPath from '../career-path/CareerPath';
 import Assessment from '../assessment/Assessment';
 import Profile from '../profile/Profile';
-import Login from '../auth/Login';
+import Login from '../auth/Loginlayout';
 import { AuthContext } from '../../contexts/AuthContext';
 
 const useStyles = makeStyles({
