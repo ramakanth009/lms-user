@@ -5,6 +5,7 @@ import {
   Typography,
   Paper,
   Button,
+  Chip,
   Stepper,
   Step,
   StepLabel,
@@ -177,6 +178,33 @@ const useStyles = makeStyles({
   timerAlert: {
     marginBottom: '16px',
   },
+  resultInfoCard: {
+    padding: '20px',
+    marginTop: '24px',
+    textAlign: 'center',
+  },
+  resultStatusIcon: {
+    fontSize: '48px',
+    marginBottom: '16px',
+  },
+  resultAttemptInfo: {
+    marginTop: '16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  resultHistoryItem: {
+    padding: '12px',
+    marginBottom: '8px',
+    borderRadius: '4px',
+    backgroundColor: '#f5f5f5',
+  },
+  feedbackBox: {
+    padding: '16px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    marginTop: '16px',
+    border: '1px solid #dee2e6',
+  }
 });
 
 const AssessmentSubmit = ({ assessment, onBack }) => {
@@ -187,6 +215,7 @@ const AssessmentSubmit = ({ assessment, onBack }) => {
   const [timeLeft, setTimeLeft] = useState(assessment?.duration_minutes * 60 || 3600);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitResponse, setSubmitResponse] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
@@ -291,19 +320,21 @@ const AssessmentSubmit = ({ assessment, onBack }) => {
       );
       
       setSubmitSuccess(true);
+      setSubmitResponse(response.data);
       
-      // Wait a moment before redirecting
-      setTimeout(() => {
-        navigate('/assessments?tab=completed');
-      }, 3000);
+      // Close confirm dialog if open
+      setConfirmSubmit(false);
       
     } catch (error) {
       console.error('Error submitting assessment:', error);
       setSubmitError('Failed to submit assessment. Please try again.');
     } finally {
       setSubmitting(false);
-      setConfirmSubmit(false);
     }
+  };
+  
+  const handleViewAllAssessments = () => {
+    navigate('/assessments?tab=in-progress');
   };
   
   // Check if current question is answered
@@ -314,6 +345,13 @@ const AssessmentSubmit = ({ assessment, onBack }) => {
   // Check if all questions are answered
   const areAllQuestionsAnswered = () => {
     return questions.every((_, index) => isQuestionAnswered(index));
+  };
+  
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString();
   };
   
   // Render the current question
@@ -436,21 +474,101 @@ const AssessmentSubmit = ({ assessment, onBack }) => {
   
   // If submission was successful, show a success message
   if (submitSuccess) {
+    const { data } = submitResponse || {};
+    const passStatus = data?.passed;
+    const attemptNumber = data?.attempt_number;
+    const history = data?.history || [];
+    
     return (
       <Box className={classes.root}>
-        <Paper className={classes.paper}>
-          <Box textAlign="center" p={3}>
-            <CheckIcon fontSize="large" className={classes.successIcon} />
-            <Typography variant="h5" gutterBottom>
-              Assessment Submitted Successfully!
+        <Box className={classes.header}>
+          <Typography variant="h4" fontWeight="500">
+            Assessment Submitted
+          </Typography>
+        </Box>
+        
+        <Paper className={classes.resultInfoCard}>
+          {passStatus ? (
+            <CheckIcon color="success" className={classes.resultStatusIcon} fontSize="large" />
+          ) : (
+            <CloseIcon color="error" className={classes.resultStatusIcon} fontSize="large" />
+          )}
+          
+          <Typography variant="h5" gutterBottom>
+            {passStatus ? 'Congratulations!' : 'Assessment Completed'}
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            {passStatus 
+              ? 'You have successfully passed this assessment!' 
+              : 'Your assessment has been submitted and evaluated.'}
+          </Typography>
+          
+          <Box className={classes.resultAttemptInfo}>
+            <Typography variant="body2">
+              <strong>Attempt:</strong> {attemptNumber}
             </Typography>
-            <Typography variant="body1" paragraph>
-              Your assessment has been submitted and will be evaluated.
+            <Typography variant="body2">
+              <strong>Submitted:</strong> {formatDate(data?.current_attempt?.submitted_at)}
             </Typography>
-            <Typography variant="body2" color="textSecondary" paragraph>
-              Redirecting to the assessments page...
-            </Typography>
-            <CircularProgress size={24} />
+          </Box>
+          
+          {data?.current_attempt?.feedback && (
+            <Box className={classes.feedbackBox}>
+              <Typography variant="subtitle2" gutterBottom>
+                Feedback:
+              </Typography>
+              <Typography variant="body2">
+                {data.current_attempt.feedback}
+              </Typography>
+            </Box>
+          )}
+          
+          {history && history.length > 0 && (
+            <Box mt={4}>
+              <Typography variant="h6" gutterBottom>
+                Attempt History
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              
+              {history.map((attempt, index) => (
+                <Box key={index} className={classes.resultHistoryItem}>
+                  <Grid container justifyContent="space-between">
+                    <Grid item>
+                      <Typography variant="body2">
+                        <strong>Attempt #{attempt.attempt_number}</strong>
+                      </Typography>
+                    </Grid>
+                    <Grid item>
+                      <Chip 
+                        size="small" 
+                        label={attempt.passed ? "Passed" : "Failed"} 
+                        color={attempt.passed ? "success" : "error"} 
+                        variant="outlined"
+                      />
+                    </Grid>
+                  </Grid>
+                  <Typography variant="body2" color="textSecondary">
+                    {formatDate(attempt.submitted_at)}
+                  </Typography>
+                  {attempt.score !== undefined && (
+                    <Typography variant="body2">
+                      Score: {attempt.score}
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+            </Box>
+          )}
+          
+          <Box mt={4} display="flex" justifyContent="center">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleViewAllAssessments}
+            >
+              View All Assessments
+            </Button>
           </Box>
         </Paper>
       </Box>

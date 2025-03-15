@@ -1,3 +1,4 @@
+// src/components/layout/Navbar.jsx
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,6 +13,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  CircularProgress,
 } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import {
@@ -22,7 +24,8 @@ import {
   KeyboardArrowDown,
 } from '@mui/icons-material';
 import { AuthContext } from '../../contexts/AuthContext';
-import Notifications from '../../contexts/NotificationContext';
+import NotificationBadge from '../../components/ui/NotificationBadge';
+import AuthService from '../../services/auth';
 
 const useStyles = makeStyles({
   appBar: {
@@ -106,6 +109,22 @@ const useStyles = makeStyles({
     gap: '10px !important',
     minWidth: '180px !important',
   },
+  loggingOutOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 9999,
+  },
+  loggingOutText: {
+    color: '#fff',
+    marginLeft: '10px',
+  },
 });
 
 const Navbar = () => {
@@ -113,6 +132,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { setIsAuthenticated } = useContext(AuthContext);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleProfileClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -127,95 +147,114 @@ const Navbar = () => {
     handleClose();
   };
 
-  const handleLogout = () => {
-    // Clear all authentication data
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('rememberedEmail');
-    
-    // Update authentication context
-    setIsAuthenticated(false);
-    
-    // Close menu
-    handleClose();
-    
-    // Navigate to login
-    navigate('/login', { replace: true });
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      handleClose();
+      
+      // Call the logout API endpoint to blacklist the token
+      await AuthService.logout();
+      
+      // Update authentication context
+      setIsAuthenticated(false);
+      
+      // Navigate to login
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      
+      // Even if there's an error, we clear auth data and redirect to login
+      setIsAuthenticated(false);
+      navigate('/login', { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
-    <AppBar position="fixed" className={classes.appBar}>
-      <Toolbar className={classes.toolbar}>
-        <Typography variant="h6" className={classes.logo}>
-          Gigaversity
-        </Typography>
+    <>
+      <AppBar position="fixed" className={classes.appBar}>
+        <Toolbar className={classes.toolbar}>
+          <Typography variant="h6" className={classes.logo}>
+            Gigaversity
+          </Typography>
 
-        <Paper component="form" className={classes.search}>
-          <Box className={classes.searchIcon}>
-            <SearchIcon />
-          </Box>
-          <InputBase
-            placeholder="Search courses, assessments..."
-            classes={{
-              root: classes.inputRoot,
-              input: classes.inputInput,
-            }}
-          />
-        </Paper>
+          <Paper component="form" className={classes.search}>
+            <Box className={classes.searchIcon}>
+              <SearchIcon />
+            </Box>
+            <InputBase
+              placeholder="Search courses, assessments..."
+              classes={{
+                root: classes.inputRoot,
+                input: classes.inputInput,
+              }}
+            />
+          </Paper>
 
-        <Box display="flex" alignItems="center">
-          <Notifications />
-          
-          <Box 
-            className={classes.profileSection}
-            onClick={handleProfileClick}
-          >
-            <Avatar className={classes.avatar}>S</Avatar>
-            <Typography className={classes.userName}>Student</Typography>
-            <KeyboardArrowDown className={classes.dropdownIcon} />
-          </Box>
+          <Box display="flex" alignItems="center">
+            <NotificationBadge />
+            
+            <Box 
+              className={classes.profileSection}
+              onClick={handleProfileClick}
+            >
+              <Avatar className={classes.avatar}>S</Avatar>
+              <Typography className={classes.userName}>Student</Typography>
+              <KeyboardArrowDown className={classes.dropdownIcon} />
+            </Box>
 
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-            PaperProps={{
-              elevation: 3,
-              sx: {
-                mt: 1.5,
-                overflow: 'visible',
-                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.1))',
-                '&::before': {
-                  content: '""',
-                  display: 'block',
-                  position: 'absolute',
-                  top: 0,
-                  right: 14,
-                  width: 10,
-                  height: 10,
-                  bgcolor: 'background.paper',
-                  transform: 'translateY(-50%) rotate(45deg)',
-                  zIndex: 0,
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
+              PaperProps={{
+                elevation: 3,
+                sx: {
+                  mt: 1.5,
+                  overflow: 'visible',
+                  filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.1))',
+                  '&::before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    right: 14,
+                    width: 10,
+                    height: 10,
+                    bgcolor: 'background.paper',
+                    transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                  },
                 },
-              },
-            }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          >
-            <MenuItem onClick={handleProfile} className={classes.menuItem}>
-              <PersonIcon fontSize="small" />
-              My Profile
-            </MenuItem>
-            <Divider />
-            <MenuItem onClick={handleLogout} className={classes.menuItem} sx={{ color: '#f44336' }}>
-              <LogoutIcon fontSize="small" />
-              Logout
-            </MenuItem>
-          </Menu>
+              }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem onClick={handleProfile} className={classes.menuItem}>
+                <PersonIcon fontSize="small" />
+                My Profile
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleLogout} className={classes.menuItem} sx={{ color: '#f44336' }}>
+                <LogoutIcon fontSize="small" />
+                Logout
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      
+      {/* Logging out overlay */}
+      {loggingOut && (
+        <Box className={classes.loggingOutOverlay}>
+          <CircularProgress size={24} color="inherit" />
+          <Typography variant="body1" className={classes.loggingOutText}>
+            Logging out...
+          </Typography>
         </Box>
-      </Toolbar>
-    </AppBar>
+      )}
+    </>
   );
 };
 
