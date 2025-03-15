@@ -1,4 +1,4 @@
-// src/components/profile/ProfileUpdate.jsx
+// src/components/profile/ProfileUpdate.jsx (Updated with validation utilities)
 import React, { useState } from 'react';
 import {
   Box,
@@ -25,8 +25,9 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
+// Import the validator utilities
+import { validateSchema, profileValidationSchema } from '../../utils/validator';
 
-// Merged styles directly into this file
 const useStyles = makeStyles({
   root: {
     padding: '16px',
@@ -164,50 +165,18 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
     }
   };
 
+  // Updated to use the validation utility
   const validateForm = () => {
-    const newErrors = {};
+    // Create a temporary object with form data and skills
+    const dataToValidate = {
+      ...formData,
+      skills: skillsList.length > 0 ? 'valid' : '' // Just needs to be non-empty for validation
+    };
     
-    // Phone validation
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^\+?[0-9]{10,15}$/.test(formData.phone)) {
-      newErrors.phone = 'Invalid phone number format';
-    }
-    
-    // Department validation
-    if (!formData.department) {
-      newErrors.department = 'Department is required';
-    }
-    
-    // Preferred role validation
-    if (!formData.preferred_role) {
-      newErrors.preferred_role = 'Preferred role is required';
-    }
-    
-    // Batch validation
-    if (!formData.batch) {
-      newErrors.batch = 'Batch is required';
-    } else if (!/^\d{4}-\d{4}$/.test(formData.batch)) {
-      newErrors.batch = 'Batch must be in format YYYY-YYYY';
-    }
-    
-    // Student ID validation
-    if (!formData.student_id) {
-      newErrors.student_id = 'Student ID is required';
-    }
-    
-    // CGPA validation
-    if (formData.current_cgpa !== '' && (isNaN(formData.current_cgpa) || formData.current_cgpa < 0 || formData.current_cgpa > 10)) {
-      newErrors.current_cgpa = 'CGPA must be a number between 0 and 10';
-    }
-    
-    // Skills validation
-    if (skillsList.length === 0) {
-      newErrors.skills = 'At least one skill is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    // Use the validation schema utility
+    const validationResult = validateSchema(dataToValidate, profileValidationSchema);
+    setErrors(validationResult.errors);
+    return validationResult.isValid;
   };
 
   const handleSubmit = async (e) => {

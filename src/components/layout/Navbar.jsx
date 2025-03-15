@@ -1,4 +1,4 @@
-// src/components/layout/Navbar.jsx
+// src/components/layout/Navbar.jsx (Updated with helper and storage utilities)
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -26,6 +26,9 @@ import {
 import { AuthContext } from '../../contexts/AuthContext';
 import NotificationBadge from '../../components/ui/NotificationBadge';
 import AuthService from '../../services/auth';
+// Import helper and storage utilities
+import { getInitials } from '../../utils/helper';
+import StorageService from '../../services/storage';
 
 const useStyles = makeStyles({
   appBar: {
@@ -133,6 +136,9 @@ const Navbar = () => {
   const { setIsAuthenticated } = useContext(AuthContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  
+  // Use storage service to get user info
+  const userData = StorageService.storage.local.get('userData', { email: 'student@example.com', name: 'Student' });
 
   const handleProfileClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -158,6 +164,9 @@ const Navbar = () => {
       // Update authentication context
       setIsAuthenticated(false);
       
+      // Clear all session data
+      StorageService.clearAllSessionData();
+      
       // Navigate to login
       navigate('/login', { replace: true });
     } catch (error) {
@@ -165,11 +174,15 @@ const Navbar = () => {
       
       // Even if there's an error, we clear auth data and redirect to login
       setIsAuthenticated(false);
+      StorageService.clearAuthData();
       navigate('/login', { replace: true });
     } finally {
       setLoggingOut(false);
     }
   };
+
+  // Use helper function to get initials
+  const userInitial = getInitials(userData.name || userData.email);
 
   return (
     <>
@@ -199,8 +212,10 @@ const Navbar = () => {
               className={classes.profileSection}
               onClick={handleProfileClick}
             >
-              <Avatar className={classes.avatar}>S</Avatar>
-              <Typography className={classes.userName}>Student</Typography>
+              <Avatar className={classes.avatar}>{userInitial}</Avatar>
+              <Typography className={classes.userName}>
+                {userData.name || 'Student'}
+              </Typography>
               <KeyboardArrowDown className={classes.dropdownIcon} />
             </Box>
 

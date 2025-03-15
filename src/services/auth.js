@@ -1,5 +1,6 @@
-// src/services/AuthService.js
+// src/services/auth.js (Updated with StorageService)
 import axios from 'axios';
+import StorageService from './storage';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -12,15 +13,8 @@ const Auth = {
       });
 
       if (response.data.access) {
-        localStorage.setItem('accessToken', response.data.access);
-        localStorage.setItem('refreshToken', response.data.refresh);
-        localStorage.setItem('isAuthenticated', 'true');
-        
-        if (rememberMe) {
-          localStorage.setItem('rememberedEmail', email);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-        }
+        // Use storage service instead of direct localStorage calls
+        StorageService.setAuthData(response.data, rememberMe, email);
       }
 
       return response.data;
@@ -31,32 +25,28 @@ const Auth = {
 
   logout: async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
+      const authData = StorageService.getAuthData();
       
-      if (refreshToken) {
+      if (authData.refreshToken) {
         // Call the logout endpoint to blacklist the token
         await axios.post(`${API_URL}/auth/logout/`, {
-          refresh: refreshToken
+          refresh: authData.refreshToken
         }, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+            Authorization: `Bearer ${authData.accessToken}`
           }
         });
       }
       
-      // Clear all local storage items related to authentication
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('isAuthenticated');
+      // Clear all authentication data
+      StorageService.clearAuthData();
       
       return { success: true, message: 'Logged out successfully' };
     } catch (error) {
       console.error('Logout error:', error);
       
-      // Even if the server request fails, clear local storage
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('isAuthenticated');
+      // Even if the server request fails, clear auth data
+      StorageService.clearAuthData();
       
       throw error;
     }
@@ -64,7 +54,7 @@ const Auth = {
 
   refreshToken: async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
+      const { refreshToken } = StorageService.getAuthData();
       
       if (!refreshToken) {
         throw new Error('No refresh token available');
@@ -75,12 +65,8 @@ const Auth = {
       });
       
       if (response.data.access) {
-        localStorage.setItem('accessToken', response.data.access);
-        
-        // If a new refresh token is provided, update it
-        if (response.data.refresh) {
-          localStorage.setItem('refreshToken', response.data.refresh);
-        }
+        // Store new tokens
+        StorageService.setAuthData(response.data);
       }
       
       return response.data;
@@ -93,7 +79,7 @@ const Auth = {
 
   getCurrentUser: () => {
     return {
-      isAuthenticated: localStorage.getItem('isAuthenticated') === 'true'
+      isAuthenticated: StorageService.getAuthData().isAuthenticated
     };
   },
 

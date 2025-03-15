@@ -1,4 +1,4 @@
-// src/components/profile/Profile.jsx
+// src/components/profile/Profile.jsx (Updated with helper and validator utilities)
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -39,8 +39,11 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import ProfileUpdate from './ProfileUpdate';
+// Import helper and validator utilities
+import { formatDate, getInitials, formatRoleName } from '../../utils/helper';
+import { validateSchema, updateRequestValidationSchema } from '../../utils/validator';
+import StorageService from '../../services/storage';
 
-// Merged styles directly into this file
 const useStyles = makeStyles({
   root: {
     padding: '16px',
@@ -199,7 +202,7 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const [requestUpdateOpen, setRequestUpdateOpen] = useState(false);
   const [requestReason, setRequestReason] = useState('');
-  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -240,6 +243,13 @@ const Profile = () => {
           };
           
           setProfile(mockData.data);
+          // Store user data in storage service
+          StorageService.storage.local.set('userData', {
+            email: mockData.data.user_email,
+            studentId: mockData.data.student_id,
+            role: mockData.data.preferred_role
+          });
+          
           setError(null);
           setLoading(false);
         }, 1000);
@@ -280,16 +290,22 @@ const Profile = () => {
   };
 
   const handleSubmitRequest = async () => {
-    if (!requestReason.trim()) {
+    // Validate the request reason
+    const validationResult = validateSchema(
+      { reason: requestReason },
+      updateRequestValidationSchema
+    );
+    
+    if (!validationResult.isValid) {
       setSnackbar({
         open: true,
-        message: 'Please provide a reason for your request',
+        message: validationResult.errors.reason || 'Please provide a valid reason for your request',
         severity: 'error',
       });
       return;
     }
 
-    setSubmittingRequest(true);
+    setSubmitting(true);
     try {
       const token = localStorage.getItem('accessToken');
       
@@ -308,7 +324,7 @@ const Profile = () => {
       
       // Mock successful request for demonstration
       setTimeout(() => {
-        setSubmittingRequest(false);
+        setSubmitting(false);
         setRequestUpdateOpen(false);
         setRequestReason('');
         setSnackbar({
@@ -320,7 +336,7 @@ const Profile = () => {
       
     } catch (error) {
       console.error('Error submitting update request:', error);
-      setSubmittingRequest(false);
+      setSubmitting(false);
       setSnackbar({
         open: true,
         message: 'Failed to submit update request. Please try again.',
@@ -345,18 +361,6 @@ const Profile = () => {
 
   const handleCancelEdit = () => {
     setEditMode(false);
-  };
-
-  // Format date string for display
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
   };
 
   if (loading) {
@@ -426,19 +430,8 @@ const Profile = () => {
     );
   }
 
-  // Format role name for display
-  const formatRoleName = (role) => {
-    if (!role) return '';
-    return role
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  // Extract first letter of email for avatar
-  const getAvatarLetter = (email) => {
-    return email ? email.charAt(0).toUpperCase() : 'S';
-  };
+  // Extract first letter of email for avatar using helper function
+  const avatarLetter = getInitials(profile.user_email);
 
   // Split skills string into an array
   const skillsArray = profile.skills ? profile.skills.split(',').map(skill => skill.trim()) : [];
@@ -456,7 +449,7 @@ const Profile = () => {
           <Paper className={classes.paper}>
             <Box className={classes.profileHeader}>
               <Avatar className={classes.avatar}>
-                {getAvatarLetter(profile.user_email)}
+                {avatarLetter}
               </Avatar>
               <Typography variant="h5" className={classes.username}>
                 {profile.student_id}
@@ -727,12 +720,15 @@ const Profile = () => {
             placeholder="Example: I need to update my CGPA and phone number."
             className={classes.unlockMessageField}
             required
+            error={requestReason.length > 0 && requestReason.length < 10}
+            helperText={requestReason.length > 0 && requestReason.length < 10 ? 
+              "Reason must be at least 10 characters" : ""}
           />
         </DialogContent>
         <DialogActions>
           <Button 
             onClick={handleRequestUpdateClose} 
-            disabled={submittingRequest}
+            disabled={submitting}
           >
             Cancel
           </Button>
@@ -740,9 +736,9 @@ const Profile = () => {
             onClick={handleSubmitRequest} 
             variant="contained" 
             color="primary"
-            disabled={submittingRequest}
+            disabled={submitting || requestReason.length < 10}
           >
-            {submittingRequest ? 'Submitting...' : 'Submit Request'}
+            {submitting ? 'Submitting...' : 'Submit Request'}
           </Button>
         </DialogActions>
       </Dialog>
