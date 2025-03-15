@@ -7,7 +7,6 @@ import {
 } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 
-// Merged styles directly into this file
 const useStyles = makeStyles({
   root: {
     padding: '20px',
@@ -43,6 +42,16 @@ const useStyles = makeStyles({
   },
 });
 
+/**
+ * StatCard component for displaying a metric with an icon
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.title - The title of the statistic
+ * @param {string|number} props.value - The value to display
+ * @param {React.ReactNode} props.icon - The icon to display
+ * @param {string} props.color - The color for the value and icon
+ * @returns {React.ReactElement} StatCard component
+ */
 const StatCard = ({ title, value, icon, color = '#7E57C2' }) => {
   const classes = useStyles();
 

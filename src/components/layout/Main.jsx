@@ -28,6 +28,7 @@ const useStyles = makeStyles({
     flexGrow: 1,
     transition: 'margin-left 0.3s, width 0.3s',
     width: 'calc(100% - 260px)',
+    height:"auto",
   },
   fullWidth: {
     marginLeft: 0,
