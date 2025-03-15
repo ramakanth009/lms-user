@@ -3,6 +3,7 @@ import { Box, Typography, Button } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import { Email as EmailIcon, Person as PersonIcon } from "@mui/icons-material";
 
+// Merged styles directly into this file (previously in styles.login.jsx)
 const useStyles = makeStyles({
   adminContact: {
     backgroundColor: "rgba(255, 255, 255, 0.15) !important",

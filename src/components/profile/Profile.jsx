@@ -40,6 +40,7 @@ import {
 import axios from 'axios';
 import ProfileUpdate from './ProfileUpdate';
 
+// Merged styles directly into this file
 const useStyles = makeStyles({
   root: {
     padding: '16px',

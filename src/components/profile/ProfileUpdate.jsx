@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 
+// Merged styles directly into this file
 const useStyles = makeStyles({
   root: {
     padding: '16px',

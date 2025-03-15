@@ -38,7 +38,8 @@ import axios from 'axios';
 import AssessmentCard from './AssessmentCard';
 import AssessmentSubmit from './AssessmentSubmit';
 
-const useStyles = makeStyles((theme) => ({
+// Merged styles directly into this file (previously in styles.assessment.jsx)
+const useStyles = makeStyles({
   root: {
     padding: '16px',
   },
@@ -157,7 +158,7 @@ const useStyles = makeStyles((theme) => ({
     fontSize: '20px',
     fontWeight: 'bold',
   },
-}));
+});
 
 const Assessment = () => {
   const classes = useStyles();

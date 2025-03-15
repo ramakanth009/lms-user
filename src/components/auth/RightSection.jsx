@@ -4,6 +4,7 @@ import { makeStyles } from "@mui/styles";
 import { Visibility, VisibilityOff, Email as EmailIcon, Lock as LockIcon } from "@mui/icons-material";
 import axios from "axios";
 
+// Merged styles directly into this file (previously in styles.login.jsx)
 const useStyles = makeStyles({
   rightSection: {
     flex: 1,

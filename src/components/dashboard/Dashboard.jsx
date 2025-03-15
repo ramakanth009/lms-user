@@ -40,6 +40,7 @@ import axios from 'axios';
 import StatCard from './StatCard';
 import ActivityFeed from './ActivityFeed';
 
+// Merged styles directly into this file (previously in styles.systemlogs.jsx and styles.performancemetrics.jsx)
 const useStyles = makeStyles({
   root: {
     padding: '16px',

@@ -21,6 +21,7 @@ import {
   MenuBook as BookIcon,
 } from '@mui/icons-material';
 
+// Merged styles directly into this file
 const useStyles = makeStyles({
   root: {
     width: '100%',

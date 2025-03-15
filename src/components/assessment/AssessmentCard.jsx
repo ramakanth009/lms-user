@@ -23,6 +23,7 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 
+// Merged styles directly into this file
 const useStyles = makeStyles({
   card: {
     height: '100%',

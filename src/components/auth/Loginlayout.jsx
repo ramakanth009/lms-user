@@ -1,3 +1,4 @@
+// src/components/auth/Loginlayout.jsx
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -9,7 +10,7 @@ import RightSection from "./RightSection";
 import ContactAdmin from "./ContactAdmin";
 import ForgotPassword from "./ForgotPassword";
 
-// Using a unique color palette (not departmentColors or primaryColors)
+// Merged styles directly into this file (previously in styles.login.jsx)
 const useStyles = makeStyles({
   root: {
     minHeight: "100vh",

@@ -9,6 +9,7 @@ import {
 } from "@mui/icons-material";
 import ContactAdmin from "./ContactAdmin";
 
+// Merged styles directly into this file (previously in styles.login.jsx)
 const useStyles = makeStyles({
   leftSection: {
     flex: 1,

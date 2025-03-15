@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 
+// Merged styles directly into this file
 const useStyles = makeStyles({
   root: {
     padding: '20px',

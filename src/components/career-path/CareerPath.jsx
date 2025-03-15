@@ -43,6 +43,7 @@ import axios from 'axios';
 import CurriculumCard from './CurriculumCard';
 import RoleProgress from './RoleProgress';
 
+// Merged styles directly into this file (previously in styles.careerpath.jsx)
 const useStyles = makeStyles({
   root: {
     padding: '16px',
