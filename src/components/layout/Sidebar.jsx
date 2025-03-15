@@ -235,7 +235,7 @@ const Sidebar = () => {
           ))}
         </List>
         
-        <Typography className={classes.sectionTitle} style={{ marginTop: '16px' }}>
+        {/* <Typography className={classes.sectionTitle} style={{ marginTop: '16px' }}>
           Resources
         </Typography>
         
@@ -260,7 +260,7 @@ const Sidebar = () => {
             </ListItemIcon>
             <ListItemText primary="Help & Support" />
           </ListItem>
-        </List>
+        </List> */}
       </Box>
       
       {/* User section at the bottom */}
