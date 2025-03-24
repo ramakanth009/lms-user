@@ -1,4 +1,3 @@
-// src/components/profile/ProfileCompletionPopup.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
   StepLabel,
   Box,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import ProfileUpdate from './ProfileUpdate';
@@ -33,6 +33,23 @@ const useStyles = makeStyles({
   welcomeMessage: {
     marginBottom: '24px',
   },
+  content: {
+    minHeight: '400px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  loadingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '200px',
+  },
+  actionContainer: {
+    marginTop: '24px',
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
 });
 
 const ProfileCompletionPopup = ({ 
@@ -46,11 +63,21 @@ const ProfileCompletionPopup = ({
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Define steps based on whether this is first login or an update
   const steps = isFirstLogin 
     ? ['Welcome', 'Complete Profile', 'Finished'] 
     : ['Update Profile', 'Finished'];
+
+  // Reset step when popup opens
+  useEffect(() => {
+    if (open) {
+      setActiveStep(isFirstLogin ? 0 : 0);
+      setError('');
+      setSuccessMessage('');
+    }
+  }, [open, isFirstLogin]);
 
   const handleProfileSubmit = async (updatedProfile) => {
     setLoading(true);
@@ -73,6 +100,13 @@ const ProfileCompletionPopup = ({
       );
       
       if (response.data) {
+        // Set success message based on operation
+        setSuccessMessage(
+          isFirstLogin 
+            ? 'Your profile has been created successfully!' 
+            : 'Your profile has been updated successfully!'
+        );
+        
         // Move to next step
         setActiveStep(prevStep => prevStep + 1);
       }
@@ -85,9 +119,9 @@ const ProfileCompletionPopup = ({
   };
 
   const handleFinish = () => {
-    // Refresh the page or update state in parent component
+    // Close the popup and indicate success
     if (onClose) {
-      onClose(true); // true indicates successful completion
+      onClose(true);
     }
   };
 
@@ -107,21 +141,26 @@ const ProfileCompletionPopup = ({
         }
         
         return (
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Welcome to Your Learning Portal!
-            </Typography>
-            <Typography variant="body1" className={classes.welcomeMessage}>
-              Before you get started, we need some information to complete your profile. 
-              This will help us customize your learning experience and track your progress.
-            </Typography>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={() => setActiveStep(1)}
-            >
-              Let's Get Started
-            </Button>
+          <Box className={classes.content}>
+            <div>
+              <Typography variant="h5" gutterBottom>
+                Welcome to Your Learning Portal!
+              </Typography>
+              <Typography variant="body1" className={classes.welcomeMessage}>
+                Before you get started, we need some information to complete your profile. 
+                This will help us customize your learning experience and track your progress.
+              </Typography>
+            </div>
+            
+            <div className={classes.actionContainer}>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={() => setActiveStep(1)}
+              >
+                Let's Get Started
+              </Button>
+            </div>
           </Box>
         );
         
@@ -129,21 +168,25 @@ const ProfileCompletionPopup = ({
         // If not first login, this is already handled in case 0
         if (!isFirstLogin) {
           return (
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                Profile Updated Successfully!
-              </Typography>
-              <Typography variant="body1">
-                Your profile has been updated. You can now continue with your learning journey.
-              </Typography>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleFinish}
-                sx={{ mt: 2 }}
-              >
-                Continue
-              </Button>
+            <Box className={classes.content}>
+              <div>
+                <Typography variant="h5" gutterBottom>
+                  Profile Updated Successfully!
+                </Typography>
+                <Typography variant="body1">
+                  Your profile has been updated. You can now continue with your learning journey.
+                </Typography>
+              </div>
+              
+              <div className={classes.actionContainer}>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={handleFinish}
+                >
+                  Continue
+                </Button>
+              </div>
             </Box>
           );
         }
@@ -159,26 +202,34 @@ const ProfileCompletionPopup = ({
         
       case 2:
         return (
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Profile Completed Successfully!
-            </Typography>
-            <Typography variant="body1">
-              Your profile has been set up. You can now start your learning journey.
-            </Typography>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleFinish}
-              sx={{ mt: 2 }}
-            >
-              Get Started
-            </Button>
+          <Box className={classes.content}>
+            <div>
+              <Typography variant="h5" gutterBottom>
+                Profile Completed Successfully!
+              </Typography>
+              <Typography variant="body1">
+                Your profile has been set up. You can now start your learning journey.
+              </Typography>
+            </div>
+            
+            <div className={classes.actionContainer}>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleFinish}
+              >
+                Get Started
+              </Button>
+            </div>
           </Box>
         );
         
       default:
-        return null;
+        return (
+          <Box className={classes.loadingContainer}>
+            <CircularProgress />
+          </Box>
+        );
     }
   };
 
@@ -187,12 +238,13 @@ const ProfileCompletionPopup = ({
       open={open} 
       onClose={() => {
         // Only allow closing if not in the middle of profile creation/update
-        if (activeStep === 0 || activeStep === steps.length - 1) {
+        if (!loading && (activeStep === 0 || activeStep === steps.length - 1)) {
           onClose(false);
         }
       }}
       disableEscapeKeyDown
       fullWidth
+      maxWidth="md"
       classes={{ paper: classes.dialogPaper }}
     >
       <DialogTitle className={classes.dialogTitle}>
@@ -207,13 +259,25 @@ const ProfileCompletionPopup = ({
           ))}
         </Stepper>
         
+        {loading && (
+          <Box className={classes.loadingContainer}>
+            <CircularProgress />
+          </Box>
+        )}
+        
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
         
-        {renderStepContent()}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {successMessage}
+          </Alert>
+        )}
+        
+        {!loading && renderStepContent()}
       </DialogContent>
     </Dialog>
   );
