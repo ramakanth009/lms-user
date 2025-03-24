@@ -1,6 +1,5 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   Box,
   Button,
@@ -251,7 +250,7 @@ const useStyles = makeStyles({
 const Login = () => {
   const classes = useStyles();
   const navigate = useNavigate();
-  const { setIsAuthenticated } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -277,32 +276,24 @@ const Login = () => {
     setError("");
 
     try {
-      // Using the student login endpoint from the API documentation
-      const response = await axios.post("http://localhost:8000/api/auth/student/login/", {
-        email: formData.email,
-        password: formData.password,
-      });
+      const result = await login(
+        formData.email,
+        formData.password,
+        formData.rememberMe
+      );
 
-      if (response.data.access) {
-        localStorage.setItem("accessToken", response.data.access);
-        localStorage.setItem("isAuthenticated", "true");
-        if (response.data.refresh) {
-          localStorage.setItem("refreshToken", response.data.refresh);
-        }
-        if (formData.rememberMe) {
-          localStorage.setItem("rememberedEmail", formData.email);
-        } else {
-          localStorage.removeItem("rememberedEmail");
-        }
-
-        setIsAuthenticated(true);
+      if (result.success) {
         navigate("/dashboard");
+      } else {
+        setError(
+          result.error?.response?.data?.detail ||
+          "Invalid email or password. Please try again."
+        );
       }
     } catch (error) {
       console.error("Login error:", error);
       setError(
-        error.response?.data?.detail ||
-          "Invalid email or password. Please try again."
+        "An unexpected error occurred. Please try again later."
       );
     } finally {
       setLoading(false);

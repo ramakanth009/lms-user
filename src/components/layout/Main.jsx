@@ -10,6 +10,7 @@ import Assessment from '../assessment/Assessment';
 import Profile from '../profile/Profile';
 import Login from '../auth/Loginlayout';
 import { AuthContext } from '../../contexts/AuthContext';
+import ProfilePopupManager from '../profile/ProfilePopupManager';
 
 const useStyles = makeStyles({
   root: {
@@ -68,6 +69,9 @@ const Main = () => {
             <Route path="/assessments" element={<Assessment />} />
             <Route path="/profile" element={<Profile />} />
           </Routes>
+          
+          {/* Add the profile popup manager */}
+          {isAuthenticated && <ProfilePopupManager />}
         </Box>
       </Box>
     </Box>

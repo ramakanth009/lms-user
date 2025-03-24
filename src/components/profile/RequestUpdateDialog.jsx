@@ -62,7 +62,7 @@ const RequestUpdateDialog = ({ open, onClose, onSuccess }) => {
       handleClose();
     } catch (error) {
       console.error('Error submitting update request:', error);
-      setError('Failed to submit update request. Please try again later.');
+      setError(error.response?.data?.message || 'Failed to submit update request. Please try again later.');
     } finally {
       setSubmitting(false);
     }

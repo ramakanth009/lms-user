@@ -1,5 +1,5 @@
 // src/components/profile/Profile.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Box,
   Typography,
@@ -22,8 +22,8 @@ import ProfileInformationSection from './ProfileInformationSection';
 import RequestUpdateDialog from './RequestUpdateDialog';
 import ProfileUpdate from './ProfileUpdate';
 
-// Import helper utilities
-import StorageService from '../../services/storage';
+// Import context
+import { AuthContext } from '../../contexts/AuthContext';
 
 const useStyles = makeStyles({
   root: {
@@ -49,6 +49,7 @@ const useStyles = makeStyles({
 
 const Profile = () => {
   const classes = useStyles();
+  const { profileStatus, updateProfileStatus } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -67,58 +68,19 @@ const Profile = () => {
       try {
         const token = localStorage.getItem('accessToken');
         
-        // In a real app, use the API endpoint
-        try {
-          // Uncomment for actual API usage
-          /*
-          const response = await axios.get('http://localhost:8000/api/student/my_profile/', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          setProfile(response.data.data);
-          */
-          
-          // Mock data for demonstration
-          setTimeout(() => {
-            const mockData = {
-              id: 27,
-              user_email: 'student@example.com',
-              department: 'Information Technology',
-              preferred_role: 'software_developer',
-              batch: '2020-2024',
-              student_id: 'ABCDEF121',
-              phone: '+1234567890',
-              current_cgpa: 3.5,
-              skills: 'Python, Java, Web Development',
-              graduation_year: 2024,
-              role_progress: 45.0,
-              completed_curriculum: 2,
-              completed_assessments: 1,
-              profile_completion_date: '2025-03-11T06:04:45.907606Z',
-              last_update_date: '2025-03-11T06:27:33.569285Z',
-              can_update_profile: false // Assuming profile updates are locked
-            };
-            
-            setProfile(mockData);
-            
-            // Store user data in storage service
-            StorageService.storage.local.set('userData', {
-              email: mockData.user_email,
-              studentId: mockData.student_id,
-              role: mockData.preferred_role
-            });
-            
-            setError(null);
-            setLoading(false);
-          }, 1000);
-        } catch (apiError) {
-          console.error('API error:', apiError);
-          throw apiError;
-        }
+        // Use real API endpoint
+        const response = await axios.get('http://localhost:8000/api/student/my_profile/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        setProfile(response.data.data);
+        setError(null);
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Failed to load profile data. Please try again later.');
+      } finally {
         setLoading(false);
       }
     };
@@ -136,17 +98,24 @@ const Profile = () => {
     }
   };
 
-  const handleRequestUpdateSuccess = (response) => {
+  const handleRequestUpdateSuccess = async (response) => {
     setSnackbar({
       open: true,
-      message: 'Update request submitted successfully',
+      message: 'Update request submitted successfully. You will be notified when approved.',
       severity: 'success',
     });
+    
+    // Close the request dialog
+    setRequestUpdateOpen(false);
   };
 
   const handleProfileUpdateSuccess = (updatedProfile) => {
     setProfile(updatedProfile);
     setEditMode(false);
+    
+    // Update the profile status in AuthContext
+    updateProfileStatus(true, updatedProfile);
+    
     setSnackbar({
       open: true,
       message: 'Profile updated successfully',

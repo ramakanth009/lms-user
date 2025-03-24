@@ -1,4 +1,4 @@
-// src/components/profile/ProfileUpdate.jsx (Updated with validation utilities)
+// src/components/profile/ProfileUpdate.jsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -30,7 +30,7 @@ import { validateSchema, profileValidationSchema } from '../../utils/validator';
 
 const useStyles = makeStyles({
   root: {
-    padding: '16px',
+    padding: isPopup => isPopup ? '0' : '16px',
   },
   header: {
     display: 'flex',
@@ -91,8 +91,8 @@ const useStyles = makeStyles({
   },
 });
 
-const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
-  const classes = useStyles();
+const ProfileUpdate = ({ profile, onSuccess, onCancel, isPopup = false }) => {
+  const classes = useStyles(isPopup);
   const [formData, setFormData] = useState({
     phone: profile?.phone || '',
     department: profile?.department || '',
@@ -196,10 +196,16 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
         skills: skillsList.join(', '),
       };
       
-      const token = localStorage.getItem('accessToken');
+      // If in popup mode, simply call the success handler with form data
+      if (isPopup) {
+        if (onSuccess) {
+          onSuccess(updatedFormData);
+        }
+        return;
+      }
       
-      // In a real app, we would send the update to the server
-      /*
+      // Regular mode - make the API call directly
+      const token = localStorage.getItem('accessToken');
       const response = await axios.put(
         'http://localhost:8000/api/student/update_profile/',
         updatedFormData,
@@ -209,45 +215,45 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
           },
         }
       );
-      */
       
-      // Mock successful update for demonstration
-      setTimeout(() => {
+      if (response.data) {
         // Create an updated profile object with the new data
         const updatedProfile = {
           ...profile,
-          ...updatedFormData,
+          ...response.data.data,
           last_update_date: new Date().toISOString(),
           can_update_profile: false, // Profile will be locked after update
         };
-        
-        setSubmitting(false);
         
         // Call the success callback with the updated profile
         if (onSuccess) {
           onSuccess(updatedProfile);
         }
-      }, 1000);
-      
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       setSubmitError('Failed to update profile. Please try again.');
+    } finally {
       setSubmitting(false);
     }
   };
 
   return (
     <Box className={classes.root}>
-      <Box className={classes.header}>
-        <Typography variant="h4" fontWeight="500">
-          Update Profile
-        </Typography>
-      </Box>
+      {!isPopup && (
+        <Box className={classes.header}>
+          <Typography variant="h4" fontWeight="500">
+            Update Profile
+          </Typography>
+        </Box>
+      )}
       
-      <Paper className={classes.paper}>
-        <Alert severity="info" className={classes.infoAlert}>
-          You can update your profile information below. After updating, your profile will be locked again and you will need to request permission for further updates.
-        </Alert>
+      <Paper className={isPopup ? '' : classes.paper}>
+        {!isPopup && (
+          <Alert severity="info" className={classes.infoAlert}>
+            You can update your profile information below. After updating, your profile will be locked again and you will need to request permission for further updates.
+          </Alert>
+        )}
         
         <form onSubmit={handleSubmit}>
           <Typography variant="h6" className={classes.sectionTitle}>
@@ -302,7 +308,7 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
                   variant="outlined"
                   error={!!errors.student_id}
                   helperText={errors.student_id}
-                  disabled={submitting || (profile && profile.id)} // Disable if editing existing profile
+                  disabled={submitting || (profile && profile.id && !isPopup)} // Disable if editing existing profile
                   required
                 />
               </Box>
@@ -318,7 +324,7 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    disabled={submitting || (profile && profile.id)} // Disable if editing existing profile
+                    disabled={submitting || (profile && profile.id && !isPopup)} // Disable if editing existing profile
                     displayEmpty
                   >
                     <MenuItem value="" disabled>
@@ -351,7 +357,7 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
                   placeholder="2020-2024"
                   error={!!errors.batch}
                   helperText={errors.batch || 'Format: YYYY-YYYY'}
-                  disabled={submitting || (profile && profile.id)} // Disable if editing existing profile
+                  disabled={submitting || (profile && profile.id && !isPopup)} // Disable if editing existing profile
                   required
                 />
               </Box>
@@ -389,7 +395,7 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
                 name="preferred_role"
                 value={formData.preferred_role}
                 onChange={handleChange}
-                disabled={submitting || (profile && profile.id)} // Disable if editing existing profile
+                disabled={submitting || (profile && profile.id && !isPopup)} // Disable if editing existing profile
                 displayEmpty
               >
                 <MenuItem value="" disabled>
@@ -487,7 +493,7 @@ const ProfileUpdate = ({ profile, onSuccess, onCancel }) => {
               startIcon={submitting ? <CircularProgress size={20} /> : <SaveIcon />}
               disabled={submitting}
             >
-              {submitting ? 'Saving...' : 'Save Changes'}
+              {submitting ? 'Saving...' : isPopup ? 'Continue' : 'Save Changes'}
             </Button>
           </Box>
         </form>
