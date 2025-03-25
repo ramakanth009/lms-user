@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/components/profile/Profile.jsx
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Box,
   Typography,
@@ -7,17 +8,26 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Button,
+  Tooltip,
+  Fade,
 } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import axios from 'axios';
 
-// Import updated components
+// Import subcomponents
 import ProfileHeader from './ProfileHeader';
 import PersonalInfoSection from './PersonalInfoSection';
-import ProfileUpdatePermission from './ProfileUpdatePermission';
+import UpdatePermissionSection from './UpdatePermissionSection';
 import AcademicMetrics from './AcademicMetrics';
 import SkillsSection from './SkillsSection';
 import ProfileInformationSection from './ProfileInformationSection';
+import RequestUpdateDialog from './RequestUpdateDialog';
+import ProfileUpdate from './ProfileUpdate';
+
+// Import context
+import { AuthContext } from '../../contexts/AuthContext';
+import { Refresh as RefreshIcon } from '@mui/icons-material';
 
 const useStyles = makeStyles({
   root: {
@@ -39,18 +49,21 @@ const useStyles = makeStyles({
     alignItems: 'center',
     minHeight: '200px',
   },
+  headerActions: {
+    display: 'flex',
+    gap: '8px',
+  },
 });
 
 const Profile = () => {
   const classes = useStyles();
+  const { profileStatus, updateProfileStatus } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [hasPendingRequest, setHasPendingRequest] = useState(false);
-  const [updatePermission, setUpdatePermission] = useState({
-    canUpdate: false,
-    timeRemaining: null,
-  });
+  const [editMode, setEditMode] = useState(false);
+  const [requestUpdateOpen, setRequestUpdateOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -58,14 +71,10 @@ const Profile = () => {
   });
 
   // Fetch profile data
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
   const fetchProfile = async () => {
-    setLoading(true);
     try {
       const token = localStorage.getItem('accessToken');
+      setRefreshing(true);
       
       // Use real API endpoint
       const response = await axios.get('http://localhost:8000/api/student/my_profile/', {
@@ -74,55 +83,80 @@ const Profile = () => {
         },
       });
       
-      if (response.data) {
-        setProfile(response.data);
-        
-        // Check if user can update profile
-        const canUpdate = response.data.can_update_profile || false;
-        
-        // If we have permission expiry data, calculate time remaining
-        let timeRemaining = null;
-        if (response.data.update_permission_expires_at) {
-          const expiryDate = new Date(response.data.update_permission_expires_at);
-          const now = new Date();
-          const diffHours = Math.max(0, (expiryDate - now) / (1000 * 60 * 60));
-          timeRemaining = diffHours;
-        }
-        
-        setUpdatePermission({
-          canUpdate,
-          timeRemaining,
-        });
-        
-        // Check if there's a pending request
-        setHasPendingRequest(response.data.has_pending_update_request || false);
-      }
-      
+      setProfile(response.data);
       setError(null);
+
+      // Update user data in AuthContext if needed
+      if (response.data && updateProfileStatus) {
+        updateProfileStatus(true, response.data);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       setError('Failed to load profile data. Please try again later.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleUpdateRequested = (response) => {
-    // Update pending request state
-    setHasPendingRequest(true);
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const handleRefresh = () => {
+    fetchProfile();
+  };
+
+  const handleEditClick = () => {
+    // Check if the user can update their profile
+    if (profile && profile.can_update_profile) {
+      // User already has permission to edit, go directly to edit mode
+      setEditMode(true);
+    } else {
+      // Show dialog to request update permission
+      setRequestUpdateOpen(true);
+    }
+  };
+
+  const handleRequestUpdateSuccess = async (response) => {
+    if (response.alreadyHasPermission) {
+      // User already has permission to edit
+      setSnackbar({
+        open: true,
+        message: 'You already have permission to update your profile. You can edit it now.',
+        severity: 'info',
+      });
+      
+      // Refresh profile data then enter edit mode
+      await fetchProfile();
+      setEditMode(true);
+    } else {
+      setSnackbar({
+        open: true,
+        message: 'Update request submitted successfully. You will be notified when approved.',
+        severity: 'success',
+      });
+      
+      // Refresh profile data
+      fetchProfile();
+    }
+    
+    // Close the request dialog
+    setRequestUpdateOpen(false);
+  };
+
+  const handleProfileUpdateSuccess = (updatedProfile) => {
+    setProfile(updatedProfile);
+    setEditMode(false);
+    
+    // Update the profile status in AuthContext
+    updateProfileStatus(true, updatedProfile);
     
     setSnackbar({
       open: true,
-      message: 'Update request submitted successfully. You will be notified when approved.',
+      message: 'Profile updated successfully',
       severity: 'success',
     });
-  };
-
-  const handleProfileUpdated = (updatedProfile) => {
-    // Update the profile state with new data
-    if (updatedProfile) {
-      setProfile(updatedProfile);
-    }
   };
 
   const handleSnackbarClose = () => {
@@ -180,12 +214,36 @@ const Profile = () => {
     );
   }
 
+  // If in edit mode, show the profile update form
+  if (editMode) {
+    return (
+      <ProfileUpdate 
+        profile={profile} 
+        onSuccess={handleProfileUpdateSuccess} 
+        onCancel={() => setEditMode(false)}
+      />
+    );
+  }
+
   return (
     <Box className={classes.root}>
       <Box className={classes.header}>
         <Typography variant="h4" fontWeight="500">
           My Profile
         </Typography>
+        <Box className={classes.headerActions}>
+          <Tooltip title="Refresh profile data">
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </Tooltip>
+        </Box>
       </Box>
       
       <Grid container spacing={3}>
@@ -195,28 +253,18 @@ const Profile = () => {
             {/* Profile Header with Avatar and Basic Info */}
             <ProfileHeader 
               profile={profile} 
+              onEditClick={handleEditClick} 
             />
             
-            {/* Profile Update Permission Status */}
-            <ProfileUpdatePermission 
-              canUpdateProfile={updatePermission.canUpdate}
-              hasPendingRequest={hasPendingRequest}
-              onUpdateRequested={handleUpdateRequested}
-              timeRemaining={updatePermission.timeRemaining}
-            />
+            <PersonalInfoSection profile={profile} />
             
-            {/* Personal Information Section */}
-            <PersonalInfoSection 
-              profile={profile}
-              canUpdateProfile={updatePermission.canUpdate}
-              onProfileUpdated={handleProfileUpdated}
-            />
+            {/* Profile Update Request Information */}
+            <UpdatePermissionSection canUpdateProfile={profile.can_update_profile} />
           </Paper>
         </Grid>
         
         {/* Right Column - Academic and Skills Information */}
         <Grid item xs={12} md={8}>
-          {/* Academic Information Paper */}
           <Paper className={classes.paper}>
             <Typography variant="h6" fontWeight="600" gutterBottom>
               Academic Information
@@ -224,33 +272,22 @@ const Profile = () => {
             
             {/* Academic Metrics */}
             <AcademicMetrics profile={profile} />
-          </Paper>
-          
-          {/* Skills Paper */}
-          <Paper className={classes.paper}>
-            <Typography variant="h6" fontWeight="600" gutterBottom>
-              Skills & Expertise
-            </Typography>
             
             {/* Skills Section */}
-            <SkillsSection 
-              skills={profile.skills} 
-              canUpdateProfile={updatePermission.canUpdate}
-              onProfileUpdated={handleProfileUpdated}
-            />
-          </Paper>
-          
-          {/* Profile Information Paper */}
-          <Paper className={classes.paper}>
-            <Typography variant="h6" fontWeight="600" gutterBottom>
-              Profile Information
-            </Typography>
+            <SkillsSection skills={profile.skills} />
             
             {/* Profile Information */}
             <ProfileInformationSection profile={profile} />
           </Paper>
         </Grid>
       </Grid>
+      
+      {/* Request Update Dialog */}
+      <RequestUpdateDialog 
+        open={requestUpdateOpen}
+        onClose={() => setRequestUpdateOpen(false)}
+        onSuccess={handleRequestUpdateSuccess}
+      />
       
       {/* Snackbar for notifications */}
       <Snackbar

@@ -1,90 +1,92 @@
 // src/components/profile/ProfileHeader.jsx
-import React from 'react';
-import {
-  Box,
-  Avatar,
-  Typography,
-  Chip,
-  Button,
-} from '@mui/material';
-import { makeStyles } from '@mui/styles';
-import { Edit as EditIcon } from '@mui/icons-material';
+import React from "react";
+import { Box, Avatar, Typography, Chip, Button } from "@mui/material";
+import { makeStyles } from "@mui/styles";
+import { Edit as EditIcon } from "@mui/icons-material";
 
 const useStyles = makeStyles({
   profileHeader: {
-    textAlign: 'center',
-    paddingBottom: '24px',
+    textAlign: "center",
+    paddingBottom: "24px",
   },
   avatar: {
-    width: '120px',
-    height: '120px',
-    margin: '0 auto 16px',
-    backgroundColor: '#7E57C2',
-    fontSize: '40px',
+    width: "120px",
+    height: "120px",
+    margin: "0 auto 16px",
+    backgroundColor: "#7E57C2",
+    fontSize: "40px",
   },
   username: {
-    fontWeight: '600',
-    marginTop: '8px',
+    fontWeight: "600",
+    marginTop: "8px",
+  },
+  studentId: {
+    fontWeight: "500",
+    marginTop: "4px",
   },
   email: {
-    color: '#666',
+    color: "#666",
+    marginTop: "4px",
   },
   editButton: {
-    marginTop: '16px',
+    marginTop: "16px",
   },
 });
 
 // Helper function to get initials for avatar
 const getInitials = (str) => {
-  if (!str) return '';
+  if (!str) return "";
   return str.charAt(0).toUpperCase();
 };
 
 // Helper function to format role name
 const formatRoleName = (role) => {
-  if (!role) return '';
+  if (!role) return "";
   return role
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 const ProfileHeader = ({ profile, onEditClick }) => {
   const classes = useStyles();
-  
+
   // Extract profile data
-  const { user_email, student_id, preferred_role } = profile || {};
-  
-  // Get initials for avatar
-  const avatarLetter = getInitials(user_email);
+  const { user_email, student_id, preferred_role, username } = profile || {};
+
+  // Get initials for avatar - prioritize username if available
+  const avatarLetter = getInitials(username || user_email);
 
   return (
     <Box className={classes.profileHeader}>
-      <Avatar className={classes.avatar}>
-        {avatarLetter}
-      </Avatar>
+      <Avatar className={classes.avatar}>{avatarLetter}</Avatar>
       <Typography variant="h5" className={classes.username}>
-        {student_id}
+        {username}
+      </Typography>
+      <Typography variant="body1" className={classes.studentId}>
+        ID: {student_id}
       </Typography>
       <Typography variant="body1" className={classes.email}>
         {user_email}
       </Typography>
-      <Chip 
-        label={formatRoleName(preferred_role)} 
-        color="primary" 
+      <Chip
+        label={formatRoleName(preferred_role)}
+        color="primary"
         variant="outlined"
-        sx={{ mt: 1 }}
+        sx={{ mt: 1, mb: 2 }}
       />
-      
+
       <Button
         variant="contained"
-        color="primary"
+        color={profile.can_update_profile ? "primary" : "secondary"}
         startIcon={<EditIcon />}
         fullWidth
         className={classes.editButton}
         onClick={onEditClick}
       >
-        Edit Profile
+        {profile.can_update_profile
+          ? "Edit Profile"
+          : "Request Edit Permission"}
       </Button>
     </Box>
   );

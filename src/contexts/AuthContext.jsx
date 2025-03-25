@@ -56,13 +56,14 @@ export const AuthProvider = ({ children }) => {
         },
       });
       
-      const profileData = response.data.data;
+      const profileData = response.data;
       
       // If admin has approved an update, there will be a flag in the response
       const adminApproved = profileData?.can_update_profile || false;
       
       // Check if profile exists and is complete
       const isComplete = !!profileData && (
+        profileData.username &&
         profileData.phone && 
         profileData.department && 
         profileData.preferred_role && 
@@ -92,7 +93,7 @@ export const AuthProvider = ({ children }) => {
       setUser({
         email: profileData?.user_email,
         studentId: profileData?.student_id,
-        name: profileData?.student_id || profileData?.user_email
+        name: profileData?.username || profileData?.student_id || profileData?.user_email
       });
       
     } catch (error) {
@@ -159,7 +160,7 @@ export const AuthProvider = ({ children }) => {
       setUser({
         email: data.user_email,
         studentId: data.student_id,
-        name: data.student_id || data.user_email
+        name: data.username || data.student_id || data.user_email
       });
     }
   };

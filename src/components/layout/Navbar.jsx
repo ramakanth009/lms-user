@@ -133,12 +133,9 @@ const useStyles = makeStyles({
 const Navbar = () => {
   const classes = useStyles();
   const navigate = useNavigate();
-  const { setIsAuthenticated } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
-  
-  // Use storage service to get user info
-  const userData = StorageService.storage.local.get('userData', { email: 'student@example.com', name: 'Student' });
 
   const handleProfileClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -158,31 +155,22 @@ const Navbar = () => {
       setLoggingOut(true);
       handleClose();
       
-      // Call the logout API endpoint to blacklist the token
-      await AuthService.logout();
+      // Call the logout function from AuthContext
+      const result = await logout();
       
-      // Update authentication context
-      setIsAuthenticated(false);
-      
-      // Clear all session data
-      StorageService.clearAllSessionData();
-      
-      // Navigate to login
-      navigate('/login', { replace: true });
+      if (result.success) {
+        // Navigate to login
+        navigate('/login', { replace: true });
+      }
     } catch (error) {
       console.error('Logout error:', error);
-      
-      // Even if there's an error, we clear auth data and redirect to login
-      setIsAuthenticated(false);
-      StorageService.clearAuthData();
-      navigate('/login', { replace: true });
     } finally {
       setLoggingOut(false);
     }
   };
 
-  // Use helper function to get initials
-  const userInitial = getInitials(userData.name || userData.email);
+  // Get user initials for avatar
+  const userInitial = getInitials(user?.name || user?.email || '');
 
   return (
     <>
@@ -214,7 +202,7 @@ const Navbar = () => {
             >
               <Avatar className={classes.avatar}>{userInitial}</Avatar>
               <Typography className={classes.userName}>
-                {userData.name || 'Student'}
+                {user?.name || 'Student'}
               </Typography>
               <KeyboardArrowDown className={classes.dropdownIcon} />
             </Box>
